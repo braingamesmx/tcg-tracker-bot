@@ -23,42 +23,43 @@ SHEET_IDS = {
 }
 
 def obtener_precios_masivos():
-    """
-    Consulta la fuente de datos masiva diaria estructurada para obtener 
-    los precios actualizados por ID de producto (Item Number).
-    """
     precios_dict = {}
     try:
-        # Nota: Puedes apuntar a la categoría o catálogo general de referencias diarias
-        # Usamos una consulta general de precios sincronizados
         url = "https://tcgcsv.com/tcgplayer/categories"
-        response = requests.get(url, timeout=15)
+        print(f"Conectando a {url}...")
+        response = requests.get(url, timeout=20)
+        print(f"Código de respuesta de categorías: {response.status_code}")
+        
         if response.status_code == 200:
-            categorias = response.json().get("results", [])
-            # Iteramos sobre las categorías de TCG (Magic, Pokemon, One Piece, etc.)
+            data_json = response.json()
+            categorias = data_json.get("results", [])
+            print(f"Categorías encontradas: {len(categorias)}")
+            
             for cat in categorias:
                 cat_id = cat.get("categoryId")
-                # Obtenemos los grupos/sets de cada categoría
+                cat_name = cat.get("name")
+                # Filtramos o revisamos las categorías que te interesan (Magic, Pokémon, One Piece)
                 groups_url = f"https://tcgcsv.com/tcgplayer/{cat_id}/groups"
                 g_resp = requests.get(groups_url, timeout=10)
                 if g_resp.status_code == 200:
                     groups = g_resp.json().get("results", [])
                     for group in groups:
                         group_id = group.get("groupId")
-                        # Consultamos los precios de los productos de este grupo
                         prices_url = f"https://tcgcsv.com/tcgplayer/{cat_id}/{group_id}/prices"
                         p_resp = requests.get(prices_url, timeout=10)
                         if p_resp.status_code == 200:
                             prices_data = p_resp.json().get("results", [])
                             for item in prices_data:
                                 prod_id = str(item.get("productId"))
-                                # Tomamos el marketPrice o midPrice como referencia base
                                 market_price = item.get("marketPrice") or item.get("midPrice")
                                 if prod_id and market_price:
                                     precios_dict[prod_id] = market_price
+        else:
+            print(f"Error en la API: Respuesta {response.text}")
     except Exception as e:
-        print(f"Error al descargar la base de precios masiva: {e}")
+        print(f"Excepción crítica al descargar la base de precios: {e}")
         
+    print(f"Total de precios recolectados en memoria: {len(precios_dict)}")
     return precios_dict
 
 def ejecutar_actualizacion():
