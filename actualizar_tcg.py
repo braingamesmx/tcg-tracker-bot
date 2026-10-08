@@ -24,10 +24,15 @@ SHEET_IDS = {
 
 def obtener_precios_masivos():
     precios_dict = {}
+    # Encabezado personalizado exigido por la API de tcgcsv.com
+    headers = {
+        "User-Agent": "BrainGamesMX-TCG-Automator/1.0 (contacto@braingamesmx.com)"
+    }
+    
     try:
         url = "https://tcgcsv.com/tcgplayer/categories"
         print(f"Conectando a {url}...")
-        response = requests.get(url, timeout=20)
+        response = requests.get(url, headers=headers, timeout=20)
         print(f"Código de respuesta de categorías: {response.status_code}")
         
         if response.status_code == 200:
@@ -37,16 +42,14 @@ def obtener_precios_masivos():
             
             for cat in categorias:
                 cat_id = cat.get("categoryId")
-                cat_name = cat.get("name")
-                # Filtramos o revisamos las categorías que te interesan (Magic, Pokémon, One Piece)
                 groups_url = f"https://tcgcsv.com/tcgplayer/{cat_id}/groups"
-                g_resp = requests.get(groups_url, timeout=10)
+                g_resp = requests.get(groups_url, headers=headers, timeout=10)
                 if g_resp.status_code == 200:
                     groups = g_resp.json().get("results", [])
                     for group in groups:
                         group_id = group.get("groupId")
                         prices_url = f"https://tcgcsv.com/tcgplayer/{cat_id}/{group_id}/prices"
-                        p_resp = requests.get(prices_url, timeout=10)
+                        p_resp = requests.get(prices_url, headers=headers, timeout=10)
                         if p_resp.status_code == 200:
                             prices_data = p_resp.json().get("results", [])
                             for item in prices_data:
@@ -61,7 +64,6 @@ def obtener_precios_masivos():
         
     print(f"Total de precios recolectados en memoria: {len(precios_dict)}")
     return precios_dict
-
 def ejecutar_actualizacion():
     print("Descargando actualización diaria de precios...")
     precios_mercado = obtener_precios_masivos()
